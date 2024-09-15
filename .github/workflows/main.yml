@@ -2,8 +2,8 @@ name: Build LLVM XCFrameworks for Release
 on: [push]
 jobs:
   prepare-build-tools:
-    runs-on: macos-11
-    if: ${{ false }}
+    runs-on: macos-latest
+    if: ${{ true }}
     steps:
       - uses: actions/checkout@v3
       - run: ./build-tools.sh
@@ -18,7 +18,7 @@ jobs:
           path: tools.tar.xz
 
   build-libffi:
-    runs-on: macos-11
+    runs-on: macos-latest
     strategy:
       matrix:
         platformArch: [iphoneos, iphonesimulator, iphonesimulator-arm64, maccatalyst, maccatalyst-arm64]
@@ -34,7 +34,7 @@ jobs:
 
   build-llvm:
     needs: build-libffi # prepare-build-tools
-    runs-on: macos-12
+    runs-on: macos-latest
     strategy:
       matrix:
         platformArch: [iphoneos, iphonesimulator, iphonesimulator-arm64, maccatalyst, maccatalyst-arm64]
@@ -55,7 +55,7 @@ jobs:
 
   create-xcframework:
     needs: build-llvm
-    runs-on: macos-12
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/download-artifact@v3
@@ -64,11 +64,12 @@ jobs:
 
       - name: Create XCFramework for Intel Macs
         run: source build-llvm.sh && create_xcframework iphoneos iphonesimulator maccatalyst
-      - run: tar -cJf LLVM_Intel.xcframework.tar.xz LLVM.xcframework
+      #- run: tar -cJf LLVM_Intel.xcframework.tar.xz LLVM.xcframework
+      - run: tar -zcvf LLVM_Intel.xcframework.zip LLVM.xcframework
       - uses: actions/upload-artifact@v3
         with:
           name: LLVM_Intel
-          path: LLVM_Intel.xcframework.tar.xz
+          path: LLVM_Intel.xcframework.zip
 
       - uses: actions/upload-artifact@v3
         with:
@@ -77,8 +78,17 @@ jobs:
 
       - name: Create XCFramework for M1 Macs
         run: source build-llvm.sh && rm -rf LLVM.xcframework && create_xcframework iphoneos iphonesimulator-arm64 maccatalyst-arm64
-      - run: tar -cJf LLVM_M1.xcframework.tar.xz LLVM.xcframework
+     # - run: tar -cJf LLVM_M1.xcframework.tar.xz LLVM.xcframework
+      - run: tar -zcvf LLVM_M1.xcframework.zip LLVM.xcframework
+        
       - uses: actions/upload-artifact@v3
         with:
           name: LLVM_M1
           path: LLVM_M1.xcframework.tar.xz
+         
+      - name: Checksum for xcframework.zip
+        run: rm -rf checksum.txt && source checksum.sh
+      - uses: actions/upload-artifact@v3
+        with:
+          name: checksum
+          path: checksum.txt

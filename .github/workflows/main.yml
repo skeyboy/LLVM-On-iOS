@@ -11,11 +11,11 @@ jobs:
           curl -OL https://github.com/ninja-build/ninja/releases/download/v1.10.2/ninja-mac.zip
           unzip ninja-mac.zip
           mv ninja tools/bin
-      - run: tar -cJf tools.tar.xz tools/
+      - run: tar -zcvf tools.zip tools/
       - uses: actions/upload-artifact@v3
         with:
           name: tools
-          path: tools.tar.xz
+          path: tools.zip
 
   build-libffi:
     runs-on: macos-11
@@ -26,11 +26,11 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build libffi for ${{ matrix.platformArch }}
         run: source build-llvm.sh && build_libffi ${{ matrix.platformArch }}
-      - run: tar -cJf libffi-${{ matrix.platformArch }}.tar.xz libffi-${{ matrix.platformArch }}/
+      - run: tar -zcvf libffi-${{ matrix.platformArch }}.zip libffi-${{ matrix.platformArch }}/
       - uses: actions/upload-artifact@v3
         with:
           name: libffi-${{ matrix.platformArch }}
-          path: libffi-${{ matrix.platformArch }}.tar.xz
+          path: libffi-${{ matrix.platformArch }}.zip
 
   build-llvm:
     needs: build-libffi # prepare-build-tools
@@ -43,15 +43,15 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/download-artifact@v3
       - name: Extract artifacts
-        run: find . -name "*.tar.xz" -exec tar xzf {} \;
+        run: find . -name "*.zip" -exec tar xzf {} \;
       - run: brew install ninja
       - name: Build LLVM for ${{ matrix.platformArch }}
         run: source build-llvm.sh && build_llvm ${{ matrix.platformArch }}
-      - run: tar -cJf LLVM-${{ matrix.platformArch }}.tar.xz LLVM-${{ matrix.platformArch }}/
+      - run: tar -zcvf LLVM-${{ matrix.platformArch }}.zip LLVM-${{ matrix.platformArch }}/
       - uses: actions/upload-artifact@v3
         with:
           name: LLVM-${{ matrix.platformArch }}
-          path: LLVM-${{ matrix.platformArch }}.tar.xz
+          path: LLVM-${{ matrix.platformArch }}.zip
 
   create-xcframework:
     needs: build-llvm
@@ -60,25 +60,25 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/download-artifact@v3
       - name: Extract artifacts
-        run: find . -name "*.tar.xz" -exec tar xzf {} \;
+        run: find . -name "*.zip" -exec tar xzf {} \;
 
       - name: Create XCFramework for Intel Macs
         run: source build-llvm.sh && create_xcframework iphoneos iphonesimulator maccatalyst
-      - run: tar -cJf LLVM_Intel.xcframework.tar.xz LLVM.xcframework
+      - run: tar -zcvf LLVM_Intel.xcframework.zip LLVM.xcframework
       - uses: actions/upload-artifact@v3
         with:
           name: LLVM_Intel
-          path: LLVM_Intel.xcframework.tar.xz
+          path: LLVM_Intel.xcframework.zip
 
       - uses: actions/upload-artifact@v3
         with:
           name: libclang
-          path: libclang.tar.xz
+          path: libclang.zip
 
       - name: Create XCFramework for M1 Macs
         run: source build-llvm.sh && rm -rf LLVM.xcframework && create_xcframework iphoneos iphonesimulator-arm64 maccatalyst-arm64
-      - run: tar -cJf LLVM_M1.xcframework.tar.xz LLVM.xcframework
+      - run: tar -zcvf LLVM_M1.xcframework.zip LLVM.xcframework
       - uses: actions/upload-artifact@v3
         with:
           name: LLVM_M1
-          path: LLVM_M1.xcframework.tar.xz
+          path: LLVM_M1.xcframework.zip
